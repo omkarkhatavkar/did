@@ -52,12 +52,13 @@ class GitHub(object):
     def search(self, query):
         """ Perform GitHub query """
         url = self.url + "/" + query
+        print(url)
         log.debug("GitHub query: {0}".format(url))
         try:
             request = urllib2.Request(url, headers=self.headers)
             response = urllib2.urlopen(request)
             log.debug("Response headers:\n{0}".format(
-                unicode(response.info()).strip()))
+                str(response.info()).strip()))
         except urllib2.URLError as error:
             log.debug(error)
             raise ReportError(
@@ -87,7 +88,7 @@ class Issue(object):
         """ String representation """
         return u"{0}/{1}#{2} - {3}".format(
             self.owner, self.project,
-            unicode(self.id).zfill(PADDING), self.data["title"])
+            str(self.id).zfill(PADDING), self.data["title"])
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -108,7 +109,17 @@ class IssuesClosed(Stats):
     """ Issues closed """
     def fetch(self):
         log.info(u"Searching for issues closed by {0}".format(self.user))
-        query = "search/issues?q=assignee:{0}+closed:{1}..{2}".format(
+        query = "search/issues?q=assignee:{0}+created:{1}..{2}".format(
+            self.user.login, self.options.since, self.options.until)
+        query += "+type:issue"
+        self.stats = [
+                Issue(issue) for issue in self.parent.github.search(query)]
+
+class IssuesOpenAssiged(Stats):
+    """ Issues closed """
+    def fetch(self):
+        log.info(u"Searching for issues closed by {0}".format(self.user))
+        query = "search/issues?q=assignee:{0}+created:{1}..{2}".format(
             self.user.login, self.options.since, self.options.until)
         query += "+type:issue"
         self.stats = [
@@ -142,6 +153,17 @@ class PullRequestsReviewed(Stats):
         log.info(u"Searching for pull requests reviewed by {0}".format(
             self.user))
         query = "search/issues?q=reviewed-by:{0}+closed:{1}..{2}".format(
+            self.user.login, self.options.since, self.options.until)
+        query += "+type:pr"
+        self.stats = [
+                Issue(issue) for issue in self.parent.github.search(query)]
+
+class PullRequestsReviewComments(Stats):
+    """ Pull review comments """
+    def fetch(self):
+        log.info(u"Searching for review comments by {0}".format(
+            self.user))
+        query = "search/issues?q=commenter:{0}+updated:{1}..{2}".format(
             self.user.login, self.options.since, self.options.until)
         query += "+type:pr"
         self.stats = [
@@ -181,6 +203,9 @@ class GitHubStats(StatsGroup):
             IssuesClosed(
                 option=option + "-issues-closed", parent=self,
                 name="Issues closed on {0}".format(option)),
+            IssuesOpenAssiged(
+                option=option + "-issues-open-assigned", parent=self,
+                name="Issues opened and assigned on {0}".format(option)),
             PullRequestsCreated(
                 option=option + "-pull-requests-created", parent=self,
                 name="Pull requests created on {0}".format(option)),
@@ -190,4 +215,9 @@ class GitHubStats(StatsGroup):
             PullRequestsReviewed(
                 option=option + "-pull-requests-reviewed", parent=self,
                 name="Pull requests reviewed on {0}".format(option)),
+            PullRequestsReviewComments(
+                option=option + "-pull-requests-review-comments", parent=self,
+                name="Pull requests review comments on {0}".format(option)),
             ]
+
+
