@@ -52,7 +52,6 @@ class GitHub(object):
     def search(self, query):
         """ Perform GitHub query """
         url = self.url + "/" + query
-        print(url)
         log.debug("GitHub query: {0}".format(url))
         try:
             request = urllib2.Request(url, headers=self.headers)
