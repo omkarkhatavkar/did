@@ -43,8 +43,8 @@ def eprint(text):
     """ Print (optionaly encoded) text """
     # When there's no terminal we need to explicitly encode strings.
     # Otherwise this would cause problems when redirecting output.
-    pass
     # print((text if sys.stdout.isatty() else text.encode("utf8")))
+    pass
 
 
 def header(text):
